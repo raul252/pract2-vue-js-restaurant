@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<head>
+  <html lang="es">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <title>Pràctica 2 | JQUERY</title>
+</head>
+<style>
+  .error {
+    background-color: beige;
+    border: 1px solid red !important;
+  }
+  </style>
+<body>
+  <div class="container mt-5">
+    <h3>Aplicación restaurante</h3>
+    <hr>
+    <div id="app">
+      <router-view></router-view>
+    </div>
+  </div>
+
+  <template id="add">
+    <div class="container mt-5">
+      <div v-if="mostrarError" class="alert alert-danger alert-dismissible fade show" id="alerta" role="alert">
+        <strong>Error</strong> <span>{{textoError}}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div v-if="mostrarResult" class="alert alert-success alert-dismissible fade show" id="success" role="alert">
+        <strong>Ok!</strong> <span>{{textoResult}}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="content">
+        <h5><span v-if="!newReserva.id > 0"> Nueva reserva</span><span v-if="newReserva.id > 0">Editar reserva</span></span></h5>
+        <br>
+        <form @submit.prevent="addProduct">
+          <input type="hidden" v-model="newReserva.id">
+          <div class="form-row">
+            <div class="form-group col-md-12">
+              <label for="inputName">Nombre:</label>
+              <input type="text" class="form-control" onKeyDown="if(this.value.length>50) return false;" v-model="newReserva.nombre"  maxlength="50">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-12">
+              <label for="inputSurname">Apellidos:</label>
+              <input type="text" class="form-control"  onKeyDown="if(this.value.length>100) return false;" v-model="newReserva.apellidos"  maxlength="100">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-12">
+              <label for="inputPhone">Teléfono:</label>
+              <input type="tel" class="form-control" onKeyDown="if(this.value.length>20) return false;" v-model="newReserva.telefono"  maxlength="20">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-12">
+              <label for="inputDate">Fecha:</label>
+              <div class="form-group row">
+              <div class="col-md-1">
+              <select v-model="newReserva.dia" :class="{error: mostrarError == true, 'form-control' : true }">
+                <option v-for="n in 31" :value="n | capitalize(2)">{{ n | capitalize(2) }} </option>
+              </select>
+              </div>
+              <div class="col-md-1">
+              <select class="form-control" v-model="newReserva.mes">
+                <option v-for="n in 12" :value="n | capitalize(2) " >{{ n | capitalize(2) }} </option>
+              </select>
+              </div>
+              <div class="col-md-2">
+              <select class="form-control" v-model="newReserva.year">
+                <option v-for="(n, i) in 100" :value="(n + 2000)| capitalize(4)">{{ ( n +2000 )| capitalize(4) }} </option>
+              </select>
+              </div>
+              <div class="col-md-1">
+              <select class="form-control" v-model="newReserva.hora">
+                <option v-for="n in 24" :value="(n-1) | capitalize(2)">{{ (n-1) | capitalize(2) }} </option>
+              </select>
+              </div>
+              <div class="col-md-1">
+              <select class="form-control" v-model="newReserva.minuto">
+                <option v-for="n in 59" :value="(n-1) | capitalize(2)">{{ (n-1) | capitalize(2) }} </option>
+              </select>
+              </div>
+            </div>
+          </div>
+          </form>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-12">
+              <label for="inputComensales">Comensales:</label>
+              <input :class="{error: mostrarError == true }" type="text" class="form-control" onKeyDown="if(this.value.length>20) return false;" v-model="newReserva.comensales">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-12">
+              <label for="inputComentarios">Comentarios:</label>
+              <textarea class="form-control" onKeyDown="if(this.value.length>500) return false;" maxlength="500" v-model="newReserva.comentarios"></textarea>
+            </div>
+          </div>
+          <br>
+          <button type="submit" class="btn btn-primary mr-3">Guardar</button>
+          <router-link class="btn btn-secondary" v-bind:to="'/'">Volver</router-link>
+        </div>
+    </div>
+  </template>
+  <template id="show">
+    <div class="container mt-5">
+      <div class="list">
+        <div v-if="mostrarError" class="alert alert-danger alert-dismissible fade show" id="alerta" role="alert">
+          <strong>Error</strong> <span>{{textoError}}</span>
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="text-center" v-if="loading">
+          <div class="spinner-border" role="status">
+            <span class="sr-only"></span>
+          </div>
+        </div>
+      <div class="content" v-if="reserva">
+        <h5>Reserva Nº <span>{{reserva.id}}</span></h5>
+        <br>
+        <div>
+          <div class="form-row">
+            <div class="col-md-12">
+              <label for="inputName">Nombre: {{reserva.nombre}}</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="col-md-12">
+              <label for="inputSurname">Apellidos: {{reserva.apellidos}}</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="col-md-12">
+              <label for="inputPhone">Teléfono: {{reserva.telefono}}</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="col-md-12">
+              <label for="inputDate">Fecha: {{reserva.fecha}}</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="col-md-12">
+              <label for="inputComensales">Comensales: {{ reserva.comensales }}</label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="col-md-12">
+              <label for="inputComentarios">Comentarios: {{ reserva.comentarios }}</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <br>
+      <router-link class="btn btn-primary" v-bind:to="'/'">Volver</router-link>
+  </template>
+  <template id="reservas">
+    <div>
+      <div v-if="mostrarError" class="alert alert-danger alert-dismissible fade show" id="alerta" role="alert">
+        <strong>Error</strong> <span>{{textoError}}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div v-if="mostrarResult" class="alert alert-success alert-dismissible fade show" id="success" role="alert">
+        <strong>Ok!</strong> <span>{{textoResult}}</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="content">
+        <h5>Listado de reservas <span v-if="!homePage">próximas 24 horas</span></h5>
+        <div v-if="homePage">
+        <a href="#" v-if="show24Alert"@click="cambiarNews">Hay reservas en las próximas 24 h</a>
+        </div>
+        <br>
+        <div class="row">
+          <div class="col-6">
+            <div class="form-group">
+            <label for="filtroTexto">Filtro Nombre</label>
+            <input type="text" v-model="filtroTexto" class="form-control"
+              onKeyDown="if(this.value.length>50) return false;" maxlength="50" placeholder="Filtrar por nombre">
+            </div>
+          </div>
+          <div class="col-6">
+                <div class="form-group">
+                  <label for="fechaInicial">Filtro Fecha</label>
+                  <div class="form-inline">
+                      <input type="datetime-local" id="filtroFechaInicial" v-model="filtroFechaInicial" class="form-control mr-2" placeholder="__/__/__ __:__">
+                      <input type="datetime-local" id="filtroFechaFinal" v-model="filtroFechaFinal" class="form-control mr-2" placeholder="__/__/__ __:__">
+                  </div>
+                </div>
+          </div>
+        </div>
+        <div class="row mt-5">
+          <div class="col">
+          <table class="table table-hover" id="results">
+            <thead>
+              <tr class="centered">
+                <th v-on:click="ordenar('nombre')">Nombre</th>
+                <th v-on:click="ordenar('telefono')">Teléfono</th>
+                <th v-on:click="ordenar('fecha')">Fecha</th>
+                <th v-on:click="ordenar('comensales')">Comensales</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="reserva in filterReservas">
+                <td>{{ reserva.nombre }} {{ reserva.apellidos }}</td>
+                <td>{{ reserva.telefono }}</td>
+                <td>{{ reserva.fecha }}</td>
+                <td>{{ reserva.comensales }}</td>
+                <td>
+                  <router-link class="btn btn-secondary mr-1" v-bind:to="{name: 'show', params: {id: reserva.id}}">
+                    Detalle</router-link>
+                  <router-link class="btn btn-info mr-1" v-bind:to="{name: 'edit', params: {id: reserva.id}}">Modificar
+                  </router-link>
+                  <button class="btn btn-danger" @click="deleteReserva(reserva.id)">Eliminar</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="text-center" v-if="loading">
+              <div class="spinner-border" role="status"></div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <router-link v-if="homePage" class="btn btn-primary"  v-bind:to="{name: 'add'}">Nueva Reserva</router-link>
+            <button v-if="!homePage" class="btn btn-secondary" @click="cambiarHome">Volver</button>
+          </div>
+        </div>
+    </div>
+  </template>
+</body>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+  integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+  integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+<script src="app.js"></script>
+<script>
+</script>
+</html>
